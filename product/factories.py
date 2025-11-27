@@ -1,30 +1,24 @@
 import factory
-
+from factory.django import DjangoModelFactory
 from product.models import Product
-from product.models import Category
+from django.contrib.auth.models import User
 
-class CategoryFactory(factory.django.DjangoModelFactory):
-    title = factory.Faker("pystring")
-    slug = factory.Faker("pystring")
-    description = factory.Faker("pystring")
-    active = factory.Iterator([True,False])
 
+class UserFactory(DjangoModelFactory):
     class Meta:
-        model = Category
+        model = User
+
+    username = factory.Faker('user_name')
+    email = factory.Faker('email')
+    first_name = factory.Faker('first_name')
+    last_name = factory.Faker('last_name')
 
 
-class ProductFactory(factory.django.DjangoModelFactory):
-    price = factory.Faker("pyint")
-    category = factory.LazyAttribute(CategoryFactory)
-    title = factory.Faker("pystring")
-
-    @factory.post_generation
-    def category(self, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            for category in extracted:
-                self.category.add(category)
-
+class ProductFactory(DjangoModelFactory):
     class Meta:
         model = Product
+
+    title = factory.Faker('sentence', nb_words=4)
+    description = factory.Faker('text', max_nb_chars=200)
+    price = factory.Faker('random_number', digits=2)
+    activate = True
