@@ -1,6 +1,7 @@
 import factory
 from factory.django import DjangoModelFactory
 from product.models import Product
+from product.models import Category
 from django.contrib.auth.models import User
 
 
