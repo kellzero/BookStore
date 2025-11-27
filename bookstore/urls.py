@@ -19,7 +19,7 @@ from django.contrib import admin
 from django.urls import path
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from rest_framework.routers import DefaultRouter
 from product.views import ProductViewSet
 
@@ -31,4 +31,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),  # Inclui todas as URLs da API
     path('api-auth/', include('rest_framework.urls')),  # Para autenticação da API
+    re_path("bookstore/(?P<version>(v1|v2))/", include("order.urls")),
+    re_path("bookstore/(?P<version>(v1|v2))/", include("product.urls")),
 ]
