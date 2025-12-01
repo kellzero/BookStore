@@ -1,38 +1,52 @@
-import pytest
+import json
+from django.test import TestCase
+from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
-from product.factories import ProductFactory, UserFactory
+
+from product.factories import ProductFactory, CategoryFactory
+from product.models import Product
 
 
-class TestProductViewSet:
-    @pytest.fixture(autouse=True)
-    def setup(self):
+class TestProductViewSet(TestCase):
+    def setUp(self):
         self.client = APIClient()
-        self.user = UserFactory()
-        self.client.force_authenticate(user=self.user)
-        yield
-        self.client.force_authenticate(user=None)
+        self.product = ProductFactory()  # This will create with a category
 
-    @pytest.mark.django_db
-    def test_create_product(self):
+    def test_get_all_product(self):
+        response = self.client.get(
+            reverse("product-list", kwargs={"version": "v1"})
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        product_data = response.json()
+
+        # Adjust based on your actual API response structure
+        if 'results' in product_data:
+            product_data = product_data['results']
+
+        self.assertEqual(product_data[0]["title"], self.product.title)
+        self.assertEqual(product_data[0]["price"], self.product.price)
+        # Note: field is called 'activate' not 'active'
+        self.assertEqual(product_data[0]["activate"], self.product.activate)
+
+    def test_create_products(self):
+        category = CategoryFactory()
         data = {
-            "title": "Novo Produto",
-            "description": "Descrição do novo produto",
-            "price": 1999,
+            "title": "notebook",
+            "description": "A great notebook",
+            "price": 800,  # Integer for PositiveBigIntegerField
             "activate": True,
-            "category": []
+            "categories_id": [category.id]  # List of category IDs for many-to-many
         }
 
-        # Use a URL correta - note o 'api/' no início
-        response = self.client.post('/api/products/', data, format='json')
-        assert response.status_code == status.HTTP_201_CREATED
-        assert response.data['title'] == data['title']
+        response = self.client.post(
+            reverse("product-list", kwargs={"version": "v1"}),
+            data=data,
+            format='json'
+        )
 
-    @pytest.mark.django_db
-    def test_list_products(self):
-        # Create some test products
-        ProductFactory.create_batch(3)
-
-        response = self.client.get('/api/products/')
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) >= 3
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created_product = Product.objects.get(title="notebook")
+        self.assertEqual(created_product.title, "notebook")
+        self.assertEqual(created_product.price, 800)
+        self.assertEqual(created_product.activate, True)

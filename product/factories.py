@@ -1,25 +1,34 @@
 import factory
-from factory.django import DjangoModelFactory
-from product.models import Product
-from product.models import Category
-from django.contrib.auth.models import User
+from product.models import Product, Category
 
 
-class UserFactory(DjangoModelFactory):
+class CategoryFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = User
+        model = Category
 
-    username = factory.Faker('user_name')
-    email = factory.Faker('email')
-    first_name = factory.Faker('first_name')
-    last_name = factory.Faker('last_name')
+    title = factory.Faker('word')
+    slug = factory.Faker('slug')
+    description = factory.Faker('sentence')
 
 
-class ProductFactory(DjangoModelFactory):
+class ProductFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Product
 
-    title = factory.Faker('sentence', nb_words=4)
-    description = factory.Faker('text', max_nb_chars=200)
-    price = factory.Faker('random_number', digits=2)
-    activate = True
+    title = factory.Faker('word')
+    description = factory.Faker('sentence')
+    price = factory.Faker('pyint', min_value=1, max_value=1000)  # For PositiveBigIntegerField
+    activate = factory.Faker('boolean')  # Note: field name is 'activate', not 'active'
+
+    @factory.post_generation
+    def category(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            # Add the categories if provided
+            for cat in extracted:
+                self.category.add(cat)
+        else:
+            # Add a default category if none provided
+            self.category.add(CategoryFactory())

@@ -4,4 +4,4 @@ from product.models import Category
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ['id', 'name']  # Apenas campos que existem no modelo Category
+        fields = ['id', 'title', 'slug', 'description']  # Use 'title' not 'name'
