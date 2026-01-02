@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+import debug_toolbar
 from django.contrib import admin
 from django.urls import path
 
@@ -28,6 +29,7 @@ router = DefaultRouter()
 router.register(r'products', ProductViewSet, basename='product')
 
 urlpatterns = [
+    path("__debug__/", include(debug_toolbar.urls)),
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),  # Inclui todas as URLs da API
     path('api-auth/', include('rest_framework.urls')),  # Para autenticação da API
