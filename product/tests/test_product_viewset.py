@@ -3,6 +3,10 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import get_user_model
+
+
 
 from product.factories import ProductFactory, CategoryFactory
 from product.models import Product
@@ -11,7 +15,17 @@ from product.models import Product
 class TestProductViewSet(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.product = ProductFactory()  # This will create with a category
+        self.product = ProductFactory()
+        user = get_user_model()
+
+        self.user = user.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpassword'
+        )
+
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 
     def test_get_all_product(self):
         response = self.client.get(
@@ -20,13 +34,12 @@ class TestProductViewSet(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         product_data = response.json()
 
-        # Adjust based on your actual API response structure
+
         if 'results' in product_data:
             product_data = product_data['results']
 
         self.assertEqual(product_data[0]["title"], self.product.title)
         self.assertEqual(product_data[0]["price"], self.product.price)
-        # Note: field is called 'activate' not 'active'
         self.assertEqual(product_data[0]["activate"], self.product.activate)
 
     def test_create_products(self):
@@ -34,9 +47,9 @@ class TestProductViewSet(TestCase):
         data = {
             "title": "notebook",
             "description": "A great notebook",
-            "price": 800,  # Integer for PositiveBigIntegerField
+            "price": 800,
             "activate": True,
-            "categories_id": [category.id]  # List of category IDs for many-to-many
+            "categories_id": [category.id]
         }
 
         response = self.client.post(
