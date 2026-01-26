@@ -11,31 +11,38 @@ from product.models import Product
 from order.models import Order
 
 class TestOrderViewSet(APITestCase):
-    client = APIClient()
     def setUp(self):
+        self.client = APIClient()
+        self.user = UserFactory()
+        self.user.set_password('testpassword')
+        self.user.save()
+
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+
         self.category = CategoryFactory(title="technology")
         self.product = ProductFactory(title="mouse", price=100, category=[self.category])
         self.order = OrderFactory(product=[self.product])
 
-        def test_order(self):
+        def test_get_all_orders(self):
             response = self.client.get(
                 reverse("order-list",kwargs={"version": "v1"})
             )
 
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-            order_data = json.loads(response.content)[0]
+            order_data = json.loads(response.content)
+            order_data = order_data[0] if order_data else{}
             self.assertEqual(order_data["product"][0]["title"],self.product.title)
             self.assertEqual(order_data["product"][0]["price"], self.product.title)
             self.assertEqual(order_data["product"][0]["active"], self.product.title)
             self.assertEqual(order_data["product"][0]["category"][0]["title"], self.product.title)
 
-            def test_create_order(self):
-                user = UserFactory()
+            def test_create_order_with_auth(self):
+
                 product = ProductFactory()
                 data = json.dumps({
-                    "products_id": [product.id],
-                    "user": user.id
+                    "products_id": [product.id]
                 })
 
                 response = self.client.post(
@@ -44,6 +51,9 @@ class TestOrderViewSet(APITestCase):
                     content_type="application/json"
                 )
 
-                self.assetEqual(response.status_code, status.HTTP_201_CREATED)
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-                created_order = Order.objects.get(user=user)
+                created_order = Order.objects.fileter(user=self.user).first()
+                self.assertIsNotNone(created_order)
+                self.assertEqual(created_order.product.count(), 1)
+                self.assertEqual(created_order.product.first().id, product.id)

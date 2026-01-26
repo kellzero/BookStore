@@ -3,10 +3,6 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
-from rest_framework.authtoken.models import Token
-from django.contrib.auth import get_user_model
-
-
 
 from product.factories import ProductFactory, CategoryFactory
 from product.models import Product
@@ -16,16 +12,6 @@ class TestProductViewSet(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.product = ProductFactory()
-        user = get_user_model()
-
-        self.user = user.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpassword'
-        )
-
-        self.token = Token.objects.create(user=self.user)
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 
     def test_get_all_product(self):
         response = self.client.get(
